@@ -7,7 +7,7 @@ import copy
 import random as rd
 import math
 
-probabilityPrecision = 10000; # what is this?
+probabilityPrecision = 100000000; # what is this?
 BoltzmannConstant = 8.617e-5;
 
 class Ising_lattice:
@@ -74,7 +74,7 @@ class Ising_lattice:
 		randNum = rd.random()%probabilityPrecision 
 
 		# this calculation results in overflow for small T
-		proportionOfBoltzmannProbabilities = math.exp(-(1/(BoltzmannConstant*self.T))*(flippedHamiltonian - initialHamiltonian))*probabilityPrecision
+		proportionOfBoltzmannProbabilities = probabilityPrecision*math.exp(-(1/(BoltzmannConstant*self.T))*(flippedHamiltonian - initialHamiltonian))
 		if (randNum < proportionOfBoltzmannProbabilities):
 			return True
 		else:
@@ -88,7 +88,7 @@ class Ising_lattice:
 		elif algorithm == "Wolff":
 			self.Wolff(its)
 		elif algorithm == "Swedsen-Wang":
-			self.Swedsen-Wang(its)
+			self.Swedsen_Wang(its)
 
 	def Metropolis(self,its):
 
@@ -103,16 +103,17 @@ class Ising_lattice:
 			flippedEnergy = testlattice.calcH() 
 			initEnergy = self.calcH()
 
-			deltaH  = initEnergy - flippedEnergy
-			      
-			if (deltaH <= 0 or self.calculateBoltzmannProbability(initEnergy, flippedEnergy)):
-				self.M += 2 * self.lattice[(x,y,z)]
-				self.H += deltaH
 
+			      
+			if (flippedEnergy <= initEnergy or self.calculateBoltzmannProbability(initEnergy, flippedEnergy)):
 				self.lattice[(x,y,z)] *= -1
 
+#	def Wolff(self,its):
 
-x=Ising_lattice(5,5,5,1,100)
+#	def Swedsen_Wang(self,its):
+
+
+x=Ising_lattice(5,5,5,1,1000)
 
 print "energy before "
 
