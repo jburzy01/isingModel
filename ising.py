@@ -95,16 +95,21 @@ class Ising_lattice:
 		for i in range(its):
 			# choose random atom
 			x = rd.randint(1,1000) % self.xsize
-			y = rd.randint(1,1000) % self.ysize # what if ysize is zero?
-			z = rd.randint(1,1000) % self.zsize
+			if self.ysize == 0:
+				y = 0
+			else
+				y = rd.randint(1,1000) % self.ysize
+
+			if self.zsize == 0:
+				z = 0
+			else
+				z = rd.randint(1,1000) % self.zsize
 
 			testlattice = copy.deepcopy(self)
 			testlattice.lattice[(x,y,z)] *= -1
 			flippedEnergy = testlattice.calcH() 
 			initEnergy = self.calcH()
-
-
-			      
+     
 			if (flippedEnergy <= initEnergy or self.calculateBoltzmannProbability(initEnergy, flippedEnergy)):
 				self.lattice[(x,y,z)] *= -1
 
@@ -113,13 +118,13 @@ class Ising_lattice:
 #	def Swedsen_Wang(self,its):
 
 
-x=Ising_lattice(5,5,5,1,1000)
+x=Ising_lattice(10,10,10,1,1000)
 
 print "energy before "
 
 print x.calcH()
 
-x.iterate(500,"Metropolis")
+x.iterate(50,"Metropolis")
 
 print "energy after "
 
