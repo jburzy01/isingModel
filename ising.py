@@ -71,9 +71,8 @@ class Ising_lattice:
 
 	# Calculates the boltzmann probability of acceptance in the case where the flipped lattice has a higher energy
 	def calculateBoltzmannProbability(self,initialHamiltonian,flippedHamiltonian):
-		randNum = rd.randint(1,1000)%probabilityPrecision # what range should randint be in ?
+		randNum = rd.uniform(0,probabilityPrecision)
 
-		# this calculation results in overflow for small T
 		proportionOfBoltzmannProbabilities = probabilityPrecision*math.exp(-(1/(BoltzmannConstant*self.T))*(flippedHamiltonian - initialHamiltonian))
 		if (randNum < proportionOfBoltzmannProbabilities):
 			return True
@@ -85,16 +84,16 @@ class Ising_lattice:
 
 		for i in range(its):
 			# choose random 
-			x = rd.randint(1,1000) % self.xsize
+			x = rd.randint(0,self.xsize-1)
 			if self.ysize == 0:
 				y = 0
 			else:
-				y = rd.randint(1,1000) % self.ysize
+				y = rd.randint(0,self.ysize-1)
 
 			if self.zsize == 0:
 				z = 0
 			else:
-				z = rd.randint(1,1000) % self.zsize
+				z = rd.randint(0,self.zsize-1) 
 
 			p = (x,y,z)
 
@@ -129,21 +128,26 @@ class Ising_lattice:
 		neighbors = self.get_Neighbors(randPoint)
 		self.addToPerimeter(perimeterList, randPoint, neighbors)
 
-		while not perimeterList:
+		# iterate through the perimeter list
+		while perimeterList:
+
 			# pop spin from perimeter list
-			neighbor = perimeterList.pop()
-
-			if not self.addToCluster(cluster,randPoint,neighbors):
-				perimeterList.append(neighbor)
+			point = perimeterList.pop()
+			pointsNeighbors = self.get_Neighbors(point)
+			# attempt to add the spin to the cluster
+			# if spin is not added to cluster, move to next perimeter spin
+			if not self.addToCluster(cluster,point,pointsNeighbors):
+				continue
+			# if spin is added to cluster, inspect neighbors with parrallel spins
+			# and add them to the perimeter list
 			else:
-				self.inspectNeighbors()
+				self.inspectNeighbors(cluster,perimeterList,point,pointsNeighbors)
 
+		# flip all spins in the cluster
 		self.flipCluster(cluster)
 
-		# for each of its neighbors that is already in the cluster,
-		# 	add spin to cluster w/ prob = 1 - exp(-2*beta*J)
-
-		# returns a list of neighbors to a given point
+	# returns a list of neighbors to a given point
+	# doesn't work for 1D and 2D cases
 	def get_Neighbors(self,point):
 		x = point[0]
 		y = point[1]
@@ -151,25 +155,38 @@ class Ising_lattice:
 
 		neighbors = []
 
-		neighbors.append((x-1,y,z))
-		neighbors.append((x,y-1,z))
-		neighbors.append((x,y,z-1))
-
+		if (x == 0):
+			neighbors.append((self.xsize-1,y,z))
+		else:
+			neighbors.append((x-1,y,z))
 		if (x == self.xsize-1):
 			neighbors.append((0,y,z))
 		else:
 			neighbors.append((x+1,y,z))
-		if (y == self.ysize-1):
-			neighbors.append((x,0,z))
-		else:
-			neighbors.append((x,y+1,z))
-		if (z == self.zsize-1):
-			neighbors.append((x,y,0))
-		else:
-			neighbors.append((x,y,z+1))
+
+		if self.ysize > 0:
+			if (y == 0):
+				neighbors.append((x,self.ysize-1,z))
+			else:
+				neighbors.append((x,y-1,z))
+			if (y == self.ysize-1):
+				neighbors.append((x,0,z))
+			else:
+				neighbors.append((x,y+1,z))
+
+		if self.zsize > 0:
+			if (z == 0):
+				neighbors.append((x,y,self.zsize-1))
+			else:
+				neighbors.append((x,y,z-1))
+			if (z == self.zsize-1):
+				neighbors.append((x,y,0))
+			else:
+				neighbors.append((x,y,z+1))
 
 		return neighbors
 
+	# adds neighbors with parallel spins to the perimeter list
 	def addToPerimeter(self, perimeterList, point, neighbors):
 
 		spin = self.lattice[point]
@@ -179,27 +196,35 @@ class Ising_lattice:
 			if spin == self.lattice[neighbor]:
 				perimeterList.append(neighbor)
 
-	# unsure about this function
-	# how do we "add to the cluster with prob = 1 - exp(-2*beta*J)"?
+	# this function doesn't work properly
 	def addToCluster(self, cluster, point, neighbors):
 		# for each of its neighbors that is already in the cluster,
 		# 	add spin to cluster w/ prob = 1 - exp(-2*beta*J)
 
 		probability = probabilityPrecision*(1-math.exp(-(2/(BoltzmannConstant*self.T))*self.const))
 
-		for i in range(len(cluster)):
-			randNum = rd.randint(1,1000)%probabilityPrecision
-			if randNum < probability:
-				cluster.append(point)
-				return True
+		for i in range(len(neighbors)):
+			if neighbors[i] in cluster:
+
+				randNum = rd.uniform(0,probabilityPrecision)
+
+				if randNum < probability:
+					cluster.append(point)
+					return True
 
 		return False
 
+	# if a parallel neighboring spin is neither in the cluster nor in the 
+	# perimeter list, we add it to the perimeter list
 	def inspectNeighbors(self,cluster, perimeterList, point, neighbors):
+
+		spin = self.lattice[point]
+
 		for i in range(len(neighbors)):
 			neighbor = neighbors[i]
+
 			if spin == self.lattice[neighbor]:
-				if not (neighbor in cluster) or not (neighbor in perimeterList):
+				if not (neighbor in cluster) and not (neighbor in perimeterList):
 					perimeterList.append(neighbor)
 
 	# flips all spins in the cluster
@@ -209,17 +234,16 @@ class Ising_lattice:
 			self.lattice[point] *= -1
 
 
-
 #	def Swedsen_Wang(self,randPoint):
 
 
-x=Ising_lattice(10,10,10,1,1000)
+x=Ising_lattice(10,10,10,1,1000000)
 
 print "energy before "
 
 print x.calcH()
 
-x.iterate(50,"Wolff")
+x.iterate(2,"Wolff")
 
 print "energy after "
 
