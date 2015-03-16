@@ -155,22 +155,22 @@ class Ising_lattice:
 		neighbors.append((x,y-1,z))
 		neighbors.append((x,y,z-1))
 
-		if (x == self.xsize):
+		if (x == self.xsize-1):
 			neighbors.append((0,y,z))
 		else:
 			neighbors.append((x+1,y,z))
-		if (y == self.ysize):
+		if (y == self.ysize-1):
 			neighbors.append((x,0,z))
 		else:
 			neighbors.append((x,y+1,z))
-		if (z == self.zsize):
+		if (z == self.zsize-1):
 			neighbors.append((x,y,0))
 		else:
 			neighbors.append((x,y,z+1))
 
 		return neighbors
 
-	def addToPerimeter(self, perimeterList, randPoint, neighbors):
+	def addToPerimeter(self, perimeterList, point, neighbors):
 
 		spin = self.lattice[point]
 
