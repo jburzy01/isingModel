@@ -25,17 +25,35 @@ class Ising_lattice:
 		self.H        = self.calcH()    # total energy
 
 
-    # Initializes the lattice with random spins 
+    # Initializes the lattice with random spins
 	def initLattice(self):
-		lattice = np.zeros((self.xsize, self.ysize, self.zsize))
+		length = self.xsize
+		lattice = np.zeros((length, length, length))
 		for x in range(self.xsize):
-			for y in range(self.ysize):
-				for z in range(self.zsize):
-					if (rd.randint(1,1000) % 2 == 1):
-						lattice[(x,y,z)] = 1
+			if self.ysize == 0:
+				if (rd.randint(1,1000) % 2 == 1):
+					lattice[(x,0,0)] = 1
+				else:
+					lattice[(x,0,0)] = -1
+			else:
+				for y in range(self.ysize):
+					if self.zsize == 0:
+						if (rd.randint(1,1000) % 2 == 1):
+							lattice[(x,y,0)] = 1
+						else:
+							lattice[(x,y,0)] = -1
 					else:
-						lattice[(x,y,z)] = -1
+						for z in range(self.zsize):
+							if (rd.randint(1,1000) % 2 == 1):
+								lattice[(x,y,z)] = 1
+							else:
+								lattice[(x,y,z)] = -1
 		self.lattice = lattice
+
+	# Initializes a traingular lattice
+	# We should define a break character to fill in 
+	# array positions outside of the lattice
+#	def initTraingularLattice(self):
 
 	def xAlignedSpins(self,x,y,z):
 		return self.lattice[(x,y,z)]*self.lattice[(x-1,y,z)]
@@ -50,23 +68,42 @@ class Ising_lattice:
 	def calcH(self):
 		numAdjacentAlignedSpins = 0
 		for x in range(self.xsize):
-			for y in range(self.ysize):
-				for z in range(self.zsize):
-					numAdjacentAlignedSpins += (self.xAlignedSpins(x,y,z) + 
-		      									self.yAlignedSpins(x,y,z) +
-		      									self.zAlignedSpins(x,y,z))
+			if self.ysize == 0:
+				numAdjacentAlignedSpins += (self.xAlignedSpins(x,0,0))
+			else:
+				for y in range(self.ysize):
+					if self.zsize == 0:
+						numAdjacentAlignedSpins += (self.xAlignedSpins(x,y,0) + 
+				      								self.yAlignedSpins(x,y,0))
+			      	else:		
+						for z in range(self.zsize):
+							numAdjacentAlignedSpins += (self.xAlignedSpins(x,y,z) + 
+				      									self.yAlignedSpins(x,y,z) +
+				      									self.zAlignedSpins(x,y,z))
 		return -self.const*numAdjacentAlignedSpins
 
 	# Calculates the net magnetization of the lattice
 	def calcM(self):
 		magnetization = 0
 		for x in range(self.xsize):
-			for y in range(self.ysize):
-				for z in range(self.zsize):
-					if self.lattice[(x,y,z)] == 1:
-						magnetization += 1
-					else:
-						magnetization += -1
+			if self.ysize == 0:
+				if self.lattice[(x,0,0)] == 1:
+					magnetization += 1
+				else:
+					magnetization += -1
+			else:
+				for y in range(self.ysize):
+					if self.zsize == 0:
+						if self.lattice[(x,y,0)] == 1:
+							magnetization += 1
+						else:
+							magnetization += -1
+			      	else:		
+						for z in range(self.zsize):
+							if self.lattice[(x,y,z)] == 1:
+								magnetization += 1
+							else:
+								magnetization += -1							
 		return magnetization
 
 	# Calculates the boltzmann probability of acceptance in the case where the flipped lattice has a higher energy
@@ -147,7 +184,6 @@ class Ising_lattice:
 		self.flipCluster(cluster)
 
 	# returns a list of neighbors to a given point
-	# doesn't work for 1D and 2D cases
 	def get_Neighbors(self,point):
 		x = point[0]
 		y = point[1]
@@ -237,13 +273,13 @@ class Ising_lattice:
 #	def Swedsen_Wang(self,randPoint):
 
 
-x=Ising_lattice(10,10,10,1,1000000)
+x=Ising_lattice(10,0,0,1,10000)
 
 print "energy before "
 
 print x.calcH()
 
-x.iterate(2,"Wolff")
+x.iterate(25,"Wolff")
 
 print "energy after "
 
