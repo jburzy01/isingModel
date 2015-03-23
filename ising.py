@@ -12,12 +12,15 @@ BoltzmannConstant = 8.617e-5;
 
 class Ising_lattice:
 
-	def __init__(self, xsize, ysize, zsize, I, T):
+	def __init__(self, xsize, ysize, zsize, I, T, Triangle):
 		self.xsize    = xsize  			# length of x edge
 		self.ysize    = ysize  			# length of y edge
 		self.zsize    = zsize  			# length of z edge
 
 		self.initLattice() 				# a new lattice of atoms
+
+		if Triangle:
+			self.initTraingularLattice()
 
 		self.const	  = I 				# interaction constant
 		self.T        = T     			# temperature
@@ -54,6 +57,7 @@ class Ising_lattice:
 	# We should define a break character to fill in 
 	# array positions outside of the lattice
 #	def initTraingularLattice(self):
+#		x <= y <= (self.xsize - x)
 
 	def xAlignedSpins(self,x,y,z):
 		return self.lattice[(x,y,z)]*self.lattice[(x-1,y,z)]
@@ -273,14 +277,14 @@ class Ising_lattice:
 #	def Swedsen_Wang(self,randPoint):
 
 
-x=Ising_lattice(10,0,0,1,10000)
+x=Ising_lattice(10,10,10,1,1000,False)
 
-print "energy before "
+print "mag before "
 
-print x.calcH()
+print x.calcM()
 
-x.iterate(25,"Wolff")
+x.iterate(200,"Metropolis")
 
-print "energy after "
+print "mag after "
 
-print x.calcH()
+print x.calcM()
