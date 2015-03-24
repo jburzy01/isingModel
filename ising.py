@@ -12,15 +12,19 @@ BoltzmannConstant = 8.617e-5;
 
 class Ising_lattice:
 
-	def __init__(self, xsize, ysize, zsize, I, T, Triangle):
+	def __init__(self, xsize, ysize, zsize, magmargin, maxreps, I, T, Triangle):
 		self.xsize    = xsize  			# length of x edge
 		self.ysize    = ysize  			# length of y edge
 		self.zsize    = zsize  			# length of z edge
+		
+		# if the energy is within magmargin maxreps times, the simulation will stop
+		self.magmargin  = magmargin	
+		self.maxreps     = maxreps
 
 		self.initLattice() 				# a new lattice of atoms
 
 		if Triangle:
-			self.initTraingularLattice()
+			self.initTriangularLattice()
 
 		self.const	  = I 				# interaction constant
 		self.T        = T     			# temperature
@@ -53,10 +57,10 @@ class Ising_lattice:
 								lattice[(x,y,z)] = -1
 		self.lattice = lattice
 
-	# Initializes a traingular lattice
+	# Initializes a triangular lattice
 	# We should define a break character to fill in 
 	# array positions outside of the lattice
-#	def initTraingularLattice(self):
+#	def initTriangularLattice(self):
 #		x <= y <= (self.xsize - x)
 
 	def xAlignedSpins(self,x,y,z):
@@ -122,7 +126,10 @@ class Ising_lattice:
 
 		# Goes through the iterations
 	def iterate(self, its, algorithm):
-
+		magnetization = self.calcM()
+		low_mag_val = magnetization
+		high_mag_val = magnetization
+			
 		for i in range(its):
 			# choose random 
 			x = rd.randint(0,self.xsize-1)
@@ -140,10 +147,26 @@ class Ising_lattice:
 
 			if algorithm == "Metropolis":
 				self.Metropolis(p)
+				print "iteration ", i ," magnetization is ",
+				print self.calcM()
 			elif algorithm == "Wolff":
 				self.Wolff(p)
+				print "iteration ", i ," magnetization is ",
+				print self.calcM()
 			elif algorithm == "Swedsen-Wang":
 				self.Swedsen_Wang(p)
+
+			# break if the duration of maxreps the magnetization is within the given margin
+			magnetization = self.calcM()
+			if ((i != 0) and (i%self.maxreps == 0)):	#if we have gone a multiple of max reps iterations plus one
+				if (abs(low_mag_val - high_mag_val) > self.magmargin):
+					break
+				low_mag_val = magnetization
+				high_mag_val = magnetization
+			elif magnetization < low_mag_val:
+				low_mag_val = magnetization
+			elif magnetization > high_mag_val:
+				high_mag_val = magnetization
 
 	def Metropolis(self,randPoint):
 
@@ -277,13 +300,22 @@ class Ising_lattice:
 #	def Swedsen_Wang(self,randPoint):
 
 
-x=Ising_lattice(10,10,10,1,1000,False)
+x=Ising_lattice(10,10,10,5,100,1,100000,False)
+
+#print "Minimum (final) energy:"
+#print x.xsize*x.ysize*x.zsize*x.const
+
+
+# if the energy is within fluct_range max_reps times, the simulation will stop
+fluct_range = 5
+max_reps = 100
+
+#
 
 print "mag before "
-
 print x.calcM()
 
-x.iterate(200,"Metropolis")
+x.iterate(10000,"Metropolis")
 
 print "mag after "
 
